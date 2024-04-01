@@ -89,7 +89,7 @@ async def send_to_logs(text):
 
 async def get_wallet_balance():
     try:
-        r = wallet_api.listlelantusmints()
+        r = wallet_api.listsparkmints()
         result = sum([_x['amount'] for _x in r['result'] if not _x['isUsed']])
         print("Current Balance", result / 1e8)
         return result
@@ -367,7 +367,7 @@ async def loop_update_balance():
     await update_balance()
 
 
-schedule.every(300).seconds.do(wallet_api.automintunspent)
+schedule.every(300).seconds.do(wallet_api.automintspark())
 
 
 def pending_tasks():
@@ -898,7 +898,7 @@ async def withdraw_coins(variables, address, amount):
 
             new_balance = float("{0:.8f}".format(float(variables.balance_in_firo - amount)))
             new_locked = float("{0:.8f}".format(float(variables.locked_in_firo + amount - AV_FEE)))
-            response = wallet_api.joinsplit(
+            response = wallet_api.spendspark(
                 address,
                 float(amount - AV_FEE),  # fee
             )
