@@ -126,7 +126,11 @@ class FiroWalletAPI:
                 })).json()
         return response
 
-    def mintpark(self, address, value):
+    """
+        Send TX to spark address
+    """
+
+    def mintspark(self, address, value):
         response = requests.post(
             self.httpprovider,
             data=json.dumps(
