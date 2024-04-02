@@ -92,7 +92,7 @@ class FiroWalletAPI:
         Mint Spark
     """
 
-    def automintspark(self):
+    def automintunspent(self):
         response = requests.post(
             self.httpprovider,
             data=json.dumps(
@@ -106,7 +106,7 @@ class FiroWalletAPI:
         return response
 
     """
-        Send Transaction 
+        Send Spark to Transparent address
     """
 
     def spendspark(self, address, value):
@@ -119,7 +119,24 @@ class FiroWalletAPI:
                     "method": "spendspark",
                     "params": [
                         {
-                            f"\"{address}\"": {"amount": value, "memo": "", "subtractFee": False}
+                            address: {"amount": value, "memo": "", "subtractFee": False}
+                        }
+                    ]
+
+                })).json()
+        return response
+
+    def mintpark(self, address, value):
+        response = requests.post(
+            self.httpprovider,
+            data=json.dumps(
+                {
+                    "jsonrpc": "1.0",
+                    "id": 4,
+                    "method": "mintspark",
+                    "params": [
+                        {
+                            address: {"amount": value, "memo": "", "subtractFee": False}
                         }
                     ]
 

@@ -367,7 +367,7 @@ async def loop_update_balance():
     await update_balance()
 
 
-schedule.every(300).seconds.do(wallet_api.automintspark())
+schedule.every(300).seconds.do(wallet_api.automintunspent)
 
 
 def pending_tasks():
