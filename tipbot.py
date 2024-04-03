@@ -64,8 +64,10 @@ col_senders = db['senders']
 col_tip_logs = db['tip_logs']
 col_envelopes = db['envelopes']
 col_txs = db['txs']
+intents = discord.Intents.default()
+intents.messages = True
 
-bot = discord.Client(intents=discord.Intents.all())
+bot = discord.Client(intents=intents)
 
 last_channel = 0
 last_user = ""
@@ -385,6 +387,7 @@ async def get_user_data(user_id):
     """
     try:
         _user = col_users.find_one({"_id": user_id})
+        print(f'USER IS {_user}')
         return _user['Address'], _user['Balance'], _user['Locked'], _user['IsWithdraw']
     except Exception as exc:
         await send_to_logs(exc)

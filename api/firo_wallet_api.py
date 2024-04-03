@@ -106,7 +106,7 @@ class FiroWalletAPI:
         return response
 
     """
-        Send Spark to Transparent address
+        Sends privately if to a Spark address, or deshields if to a transparent address.
     """
 
     def spendspark(self, address, value):
@@ -127,7 +127,7 @@ class FiroWalletAPI:
         return response
 
     """
-        Send TX to spark address
+        Anonymizes (mints) transparent balance to a Spark address
     """
 
     def mintspark(self, address, value):
