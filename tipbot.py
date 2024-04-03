@@ -65,7 +65,7 @@ col_tip_logs = db['tip_logs']
 col_envelopes = db['envelopes']
 col_txs = db['txs']
 
-bot = discord.Client(intents=discord.Intents.default())
+bot = discord.Client(intents=discord.Intents.all())
 
 last_channel = 0
 last_user = ""
@@ -1062,7 +1062,6 @@ async def action_processing(cmd, args, variables):
     """
         Check each user actions
     """
-
     if variables.username in admins:
         if cmd.startswith("!botbalance"):
             balance = await get_wallet_balance()
