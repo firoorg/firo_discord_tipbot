@@ -91,7 +91,6 @@ async def send_to_logs(text):
 
 async def get_wallet_balance():
     try:
-        # print(wallet_api.create_user_wallet())
         r = wallet_api.listsparkmints()
         result = sum([_x['amount'] for _x in r['result'] if not _x['isUsed']])
         print("Current Balance", result / 1e8)
@@ -203,8 +202,6 @@ async def update_balance():
         if not mnt['isUsed']:
             unused_mints.append(mnt)
 
-    print(f"UNUSED MINTS IS {unused_mints}")
-
     response = wallet_api.get_txs_list()
 
     for _tx in response['result']:
@@ -214,9 +211,11 @@ async def update_balance():
                     """
                         Check withdraw txs    
                     """
+                    wallet_address = wallet_api.create_user_wallet()
                     _user_receiver = col_users.find_one(
-                        {"Address": wallet_api.create_user_wallet()}
+                        {"Address": wallet_address[0]}
                     )
+
                     _is_tx_exist_deposit = col_txs.find_one(
                         {"txId": _tx['txid'], "type": "deposit"}
                     ) is not None
@@ -251,7 +250,7 @@ async def update_balance():
 
                         print("*Deposit Success*\n"
                               "Balance of address %s has recharged on *%s* firos." % (
-                                  _tx['address'], value_in_coins
+                                  wallet_address[0], value_in_coins
                               ))
                         continue
 
@@ -309,7 +308,7 @@ async def update_balance():
 
                             await create_send_tips_image(_user_sender['_id'],
                                                          "{0:.8f}".format(float(abs(_tx['amount']))),
-                                                         "%s..." % _tx['address'][:8])
+                                                         "%s..." % wallet_address[0][:8])
 
                             col_senders.update_one(
                                 {"txId": _tx['txid'], "status": "pending", "user_id": _user_sender['_id']},
@@ -514,7 +513,6 @@ async def get_user_data(user_id):
     """
     try:
         _user = col_users.find_one({"_id": user_id})
-        print(f'USER IS {_user}')
         return _user['Address'], _user['Balance'], _user['Locked'], _user['IsWithdraw']
     except Exception as exc:
         await send_to_logs(exc)
@@ -996,7 +994,7 @@ async def withdraw_image(user_id, amount, address, msg=None):
         traceback.print_exc()
 
 
-async def withdraw_coins(variables, address, amount):
+async def withdraw_coins(variables, address, amount, memo=""):
     """
         Withdraw coins to address with params:
         address
@@ -1013,7 +1011,14 @@ async def withdraw_coins(variables, address, amount):
             traceback.print_exc()
             return
 
-        _is_address_valid = wallet_api.validate_address(address)['result']['isvalid']
+        _is_address_valid = False
+        validate = wallet_api.validate_address(address)['result']
+
+        is_valid_spark = 'isvalidSpark'
+        is_valid_firo = 'isvalid'
+
+        if is_valid_spark in validate or is_valid_firo in validate:
+            _is_address_valid = True
         if not _is_address_valid:
             await send_message(
                 variables.message.author,
@@ -1030,7 +1035,8 @@ async def withdraw_coins(variables, address, amount):
             new_locked = float("{0:.8f}".format(float(variables.locked_in_firo + amount - AV_FEE)))
             response = wallet_api.spendspark(
                 address,
-                float(amount - AV_FEE),  # fee
+                float(amount),
+                memo
             )
             print(response, "withdraw")
             if response.get('error'):
@@ -1263,7 +1269,7 @@ async def action_processing(cmd, args, variables):
 
     elif cmd.startswith("!withdraw"):
         try:
-            if args is not None and len(args) == 2:
+            if args is not None and len(args) >= 2:
                 await withdraw_coins(variables, *args)
             else:
                 await incorrect_parameters_image(variables)

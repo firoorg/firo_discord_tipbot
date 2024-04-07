@@ -109,7 +109,7 @@ class FiroWalletAPI:
         Sends privately if to a Spark address, or deshields if to a transparent address.
     """
 
-    def spendspark(self, address, value):
+    def spendspark(self, address, value, memo=""):
         response = requests.post(
             self.httpprovider,
             data=json.dumps(
@@ -119,7 +119,7 @@ class FiroWalletAPI:
                     "method": "spendspark",
                     "params": [
                         {
-                            address: {"amount": value, "memo": "", "subtractFee": False}
+                            address: {"amount": value, "memo": memo, "subtractFee": False}
                         }
                     ]
 
