@@ -201,7 +201,6 @@ async def update_balance():
     for mnt in mints['result']:
         if not mnt['isUsed']:
             unused_mints.append(mnt)
-
     response = wallet_api.get_txs_list()
 
     for _tx in response['result']:
@@ -513,11 +512,35 @@ async def get_user_data(user_id):
     """
     try:
         _user = col_users.find_one({"_id": user_id})
+        # Check if user still has old Lelantus address
+        await update_address_and_balance(_user)
         return _user['Address'], _user['Balance'], _user['Locked'], _user['IsWithdraw']
     except Exception as exc:
         await send_to_logs(exc)
         traceback.print_exc()
         return None, None, None, None
+
+
+async def update_address_and_balance(_user):
+    mints = wallet_api.listsparkmints()
+    if len(mints) > 0:
+        # Check if User has a Lelantus address
+        valid = wallet_api.validate_address(_user['Address'])['result']
+        is_valid_firo = 'isvalid'
+        # User still has Lelantus address, Update address and balance
+        if is_valid_firo in valid:
+            spark_address = wallet_api.create_user_wallet()
+            new_balance = sum([_x['amount'] for _x in mints['result'] if not _x['isUsed']])
+            col_users.update_one(
+                _user,
+                {
+                    "$set":
+                        {
+                            "Address": spark_address[0],
+                            "Balance": float("{0:.8f}".format(float(0)))
+                        }
+                }
+            )
 
 
 async def check_username_on_change(variables):
@@ -775,7 +798,8 @@ async def red_envelope_created(variables, first_name):
     image_name = 'created.png'
     im.save(image_name)
     try:
-        message = await variables.message.channel.send('Catch Firo✋Please react to the message!', file=discord.File(image_name))
+        message = await variables.message.channel.send('Catch Firo✋Please react to the message!',
+                                                       file=discord.File(image_name))
         return message.id
     except Exception as exc:
         await send_to_logs(exc)
@@ -886,7 +910,8 @@ async def catch_envelope(variables):
         target = await bot.fetch_user(variables.user_id)
 
         if variables.balance_in_firo is None:
-            await send_message(target, "You need to set up a firo tipbot account first to catch an envelope. Try !start")
+            await send_message(target,
+                               "You need to set up a firo tipbot account first to catch an envelope. Try !start")
             return
 
         if _is_user_caught:
