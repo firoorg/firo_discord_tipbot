@@ -69,6 +69,7 @@ Get your Discord bot token following these instructions.
    3) Copy the url given by the scopes, and enter it in the search bar.
       1) Approve adding the bot to the server of your choice.
 8) Create a private channel in your server called tipbot_logs.
+9) Under Privileged Gateway Intents enable PRESENCE INTENT, SERVER MEMBERS INTENT AND MESSAGE CONTENT INTENT and Save
 
 Configure the services.json with your relevant information. 
 <pre>
