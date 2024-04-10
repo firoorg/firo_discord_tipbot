@@ -202,7 +202,7 @@ async def update_balance():
         if not mnt['isUsed']:
             unused_mints.append(mnt)
     response = wallet_api.get_txs_list()
-
+    print("GETS TO THIS POINT")
     for _tx in response['result']:
         for unused_mnt in unused_mints:
             try:
@@ -530,14 +530,12 @@ async def update_address_and_balance(_user):
         # User still has Lelantus address, Update address and balance
         if is_valid_firo in valid:
             spark_address = wallet_api.create_user_wallet()
-            new_balance = sum([_x['amount'] for _x in mints['result'] if not _x['isUsed']])
             col_users.update_one(
                 _user,
                 {
                     "$set":
                         {
                             "Address": spark_address[0],
-                            "Balance": float("{0:.8f}".format(float(0)))
                         }
                 }
             )
@@ -1057,7 +1055,7 @@ async def withdraw_coins(variables, address, amount, memo=""):
             _user = col_users.find_one({"_id": variables.user_id})
 
             new_balance = float("{0:.8f}".format(float(variables.balance_in_firo - amount)))
-            new_locked = float("{0:.8f}".format(float(variables.locked_in_firo + amount - AV_FEE)))
+            new_locked = float("{0:.8f}".format(float(variables.locked_in_firo + amount)))
             response = wallet_api.spendspark(
                 address,
                 float(amount),

@@ -119,7 +119,7 @@ class FiroWalletAPI:
                     "method": "spendspark",
                     "params": [
                         {
-                            address: {"amount": value, "memo": memo, "subtractFee": False}
+                            address: {"amount": value, "memo": memo, "subtractFee": True}
                         }
                     ]
 
