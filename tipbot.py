@@ -64,8 +64,7 @@ col_senders = db['senders']
 col_tip_logs = db['tip_logs']
 col_envelopes = db['envelopes']
 col_txs = db['txs']
-intents = discord.Intents.default()
-intents.messages = True
+intents = discord.Intents.all()
 
 bot = discord.Client(intents=intents)
 
