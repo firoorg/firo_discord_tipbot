@@ -22,6 +22,8 @@ from pymongo import MongoClient
 import uuid
 import png
 from api.firo_wallet_api import FiroWalletAPI
+import discord
+from discord.ext import commands
 
 plt.style.use('seaborn-whitegrid')
 
@@ -51,7 +53,7 @@ regular = ImageFont.truetype(font="fonts/ProximaNova-Regular.ttf", size=int(18 *
 bold_high = ImageFont.truetype(font="fonts/ProximaNova-Bold.ttf", size=int(26 * point_to_pixels))
 
 WELCOME_MESSAGE = """
-**Welcome to the Firo telegram tip bot!** 
+**Welcome to the Firo discord tip bot!** 
 """
 
 # Firo Butler Initialization
@@ -64,9 +66,60 @@ col_senders = db['senders']
 col_tip_logs = db['tip_logs']
 col_envelopes = db['envelopes']
 col_txs = db['txs']
-intents = discord.Intents.all()
+intents = discord.Intents.default()
+intents.message_content = True
 
-bot = discord.Client(intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+
+@bot.tree.command(name="start", description="Firo bot start command, use this to get an address and get tipping")
+async def slash_command(interaction=discord.Interaction):
+    await interaction.response.send_message("!start")
+
+
+@bot.tree.command(name="help", description="Gives a list of commands that you can send to the Firo Tip bot")
+async def slash_command(interaction=discord.Interaction):
+    await interaction.response.send_message("!help")
+
+
+@bot.tree.command(name="botbalance", description="Returns the current balance in Bot")
+async def slash_command(interaction=discord.Interaction):
+    await interaction.response.send_message("!botbalance")
+
+
+@bot.tree.command(name="balance", description="Returns the wallet's balance")
+async def slash_command(interaction=discord.Interaction):
+    await interaction.response.send_message("!balance")
+
+
+@bot.tree.command(name="deposit", description="Returns your Firo deposit address, Send some Firo here to get tipping")
+async def slash_command(interaction=discord.Interaction):
+    await interaction.response.send_message("!deposit")
+
+
+@bot.tree.command(name="withdraw", description="Allows sending onchain funds to a given address, requires address and "
+                                               "amount")
+async def slash_command(interaction=discord.Interaction):
+    await interaction.response.send_message("!withdraw")
+
+
+@bot.tree.command(name="envelope", description="Sends a red envelope to the group, where everyone can open and share "
+                                               "the Firo")
+async def slash_command(interaction=discord.Interaction):
+    await interaction.response.send_message("!envelope")
+
+
+@bot.tree.command(name="tip", description="Send a user a tip")
+async def slash_command(interaction=discord.Interaction):
+    await interaction.response.send_message("!tip")
+
+
+@bot.tree.command(name="atip", description="Send a user an anonymous tip")
+async def slash_command(interaction=discord.Interaction):
+    await interaction.response.send_message("!atip")
+
+
+# bot = discord.Client(intents=intents)
 
 last_channel = 0
 last_user = ""
@@ -1061,6 +1114,7 @@ async def withdraw_failed_image(user_id):
 
 
 async def action_processing(cmd, args, variables):
+    print(f'COMMAND IS {cmd}')
     """
         Check each user actions
     """
@@ -1230,6 +1284,7 @@ async def on_raw_reaction_add(payload):
 
 @bot.event
 async def on_ready():
+    await bot.tree.sync()
     print('We have logged in as {0.user}'.format(bot))
     loop_update_balance.start()
     await send_to_logs("logged on!")
