@@ -259,10 +259,13 @@ async def update_balance():
             unused_mints.append(mnt)
     response = wallet_api.get_txs_list()
 
+    # print(wallet_api.listsparkspends())
+    # print(f"SPENDS IS {wallet_api.listsparkspends()}")
     for _tx in response['result']:
         for unused_mnt in unused_mints:
             try:
                 if unused_mnt['txid'] == _tx['txid']:
+                    txId = _tx['txid']
                     """
                         Check withdraw txs    
                     """
@@ -310,76 +313,82 @@ async def update_balance():
                                   sparkcoin_addr[0]['address'], value_in_coins
                               ))
                         continue
-
-                    _is_tx_exist_withdraw = col_txs.find_one(
-                        {"txId": _tx['txid'], "type": "withdraw"}
-                    ) is not None
-
-                    pending_sender = col_senders.find_one(
-                        {"txId": _tx['txid'], "status": "pending"}
-                    )
-                    if not pending_sender:
-                        continue
-                    _user_sender = col_users.find_one({"_id": pending_sender['user_id']})
-                    if _user_sender is not None and not _is_tx_exist_withdraw and _tx['category'] == "spend":
-
-                        value_in_coins = float((abs(_tx['amount'])))
-
-                        if _tx['confirmations'] >= 2:
-                            _id = str(uuid.uuid4())
-                            col_txs.insert_one({
-                                '_id': _id,
-                                "txId": _tx['txid'],
-                                **_tx,
-                                'type': "withdraw",
-                                'timestamp': datetime.datetime.now()
-                            })
-                            new_locked = float(_user_sender['Locked']) - value_in_coins
-                            if new_locked >= 0:
-                                col_users.update_one(
-                                    {
-                                        "_id": _user_sender['_id']
-                                    },
-                                    {
-                                        "$set":
-                                            {
-                                                "Locked": float("{0:.8f}".format(new_locked)),
-                                                "IsWithdraw": False
-                                            }
-                                    }
-                                )
-                            else:
-                                new_balance = float(_user_sender['Balance']) - value_in_coins
-                                col_users.update_one(
-                                    {
-                                        "_id": _user_sender['_id']
-                                    },
-                                    {
-                                        "$set":
-                                            {
-                                                "Balance": float("{0:.8f}".format(new_balance)),
-                                                "IsWithdraw": False
-                                            }
-                                    }
-                                )
-
-                            await create_send_tips_image(_user_sender['_id'],
-                                                         "{0:.8f}".format(float(abs(_tx['amount']))),
-                                                         "%s..." % _user_sender['Address'][0][:8])
-
-                            col_senders.update_one(
-                                {"txId": _tx['txid'], "status": "pending", "user_id": _user_sender['_id']},
-                                {"$set": {"status": "completed"}}
-                            )
-                            print("*Withdrawal Success*\n"
-                                  "Balance of address %s has recharged on *%s* firos." % (
-                                      _user_sender['Address'], value_in_coins
-                                  ))
-                            continue
             except Exception as exc:
                 await send_to_logs(exc)
                 traceback.print_exc()
 
+    spark_spends = wallet_api.listsparkspends()
+    for spend in spark_spends['result']:
+        for _tx in response['result']:
+            try:
+                _is_tx_exist_withdraw = col_txs.find_one(
+                    {"txId": spend['txid'], "type": "withdraw"}
+                ) is not None
+
+                pending_sender = col_senders.find_one(
+                    {"txId": _tx['txid'], "status": "pending"}
+                )
+
+                if not pending_sender:
+                    continue
+                _user_sender = col_users.find_one({"_id": pending_sender['user_id']})
+
+                if _user_sender is not None and not _is_tx_exist_withdraw and _tx['category'] == "spend":
+                    value_in_coins = float((abs(_tx['amount'])))
+                    if _tx['confirmations'] >= 2:
+                        _id = str(uuid.uuid4())
+                        col_txs.insert_one({
+                            '_id': _id,
+                            "txId": _tx['txid'],
+                            **_tx,
+                            'type': "withdraw",
+                            'timestamp': datetime.datetime.now()
+                        })
+                        new_locked = float(_user_sender['Locked']) - value_in_coins
+                        if new_locked >= 0:
+                            col_users.update_one(
+                                {
+                                    "_id": _user_sender['_id']
+                                },
+                                {
+                                    "$set":
+                                        {
+                                            "Locked": float("{0:.8f}".format(new_locked)),
+                                            "IsWithdraw": False
+                                        }
+                                }
+                            )
+                        else:
+                            new_balance = float(_user_sender['Balance']) - value_in_coins
+                            col_users.update_one(
+                                {
+                                    "_id": _user_sender['_id']
+                                },
+                                {
+                                    "$set":
+                                        {
+                                            "Balance": float("{0:.8f}".format(new_balance)),
+                                            "IsWithdraw": False
+                                        }
+                                }
+                            )
+
+                        await create_send_tips_image(_user_sender['_id'],
+                                                     "{0:.8f}".format(float(abs(_tx['amount']))),
+                                                     "%s..." % _user_sender['Address'][0][:8])
+
+                        col_senders.update_one(
+                            {"txId": _tx['txid'], "status": "pending", "user_id": _user_sender['_id']},
+                            {"$set": {"status": "completed"}}
+                        )
+                        print("*Withdrawal Success*\n"
+                              "Balance of address %s has recharged on *%s* firos." % (
+                                  _user_sender['Address'], value_in_coins
+                              ))
+                        continue
+            except Exception as exc:
+                await send_to_logs(exc)
+                traceback.print_exc()
 
 asyncio.run(update_balance())
 

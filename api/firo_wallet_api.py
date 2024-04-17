@@ -184,7 +184,7 @@ class FiroWalletAPI:
                     "id": 4,
                     "method": "listsparkspends",
                 })).json()
-        print(response)
+        # print(response)
         return response
 
     """
