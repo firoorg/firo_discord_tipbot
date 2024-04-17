@@ -203,6 +203,10 @@ async def create_send_tips_image(user_id, amount, first_name, comment=""):
 
 
 async def create_receive_tips_image(user_id, amount, first_name, comment=""):
+    print(user_id)
+    print(amount)
+    print(first_name)
+    print(comment)
     try:
         im = Image.open("images/receive_template.png")
         d = ImageDraw.Draw(im)
@@ -262,9 +266,10 @@ async def update_balance():
                     """
                         Check withdraw txs    
                     """
-                    wallet_address = wallet_api.create_user_wallet()
+                    sparkcoin_addr = wallet_api.get_spark_coin_address(unused_mnt['txid'])
+
                     _user_receiver = col_users.find_one(
-                        {"Address": wallet_address[0]}
+                        {"Address": sparkcoin_addr[0]['address']}
                     )
 
                     _is_tx_exist_deposit = col_txs.find_one(
@@ -294,6 +299,7 @@ async def update_balance():
                                     }
                             }
                         )
+
                         await create_receive_tips_image(
                             _user_receiver['_id'],
                             "{0:.8f}".format(value_in_coins),
@@ -301,7 +307,7 @@ async def update_balance():
 
                         print("*Deposit Success*\n"
                               "Balance of address %s has recharged on *%s* firos." % (
-                                  wallet_address[0], value_in_coins
+                                  sparkcoin_addr[0]['address'], value_in_coins
                               ))
                         continue
 
@@ -359,7 +365,7 @@ async def update_balance():
 
                             await create_send_tips_image(_user_sender['_id'],
                                                          "{0:.8f}".format(float(abs(_tx['amount']))),
-                                                         "%s..." % wallet_address[0][:8])
+                                                         "%s..." % _user_sender['Address'][0][:8])
 
                             col_senders.update_one(
                                 {"txId": _tx['txid'], "status": "pending", "user_id": _user_sender['_id']},
@@ -420,7 +426,7 @@ async def update_address_and_balance(_user):
     mints = wallet_api.listsparkmints()
     if len(mints) > 0:
         # Check if User has a Lelantus address
-        valid = wallet_api.validate_address(_user['Address'])['result']
+        valid = wallet_api.validate_address(_user['Address'][0])['result']
         is_valid_firo = 'isvalid'
         # User still has Lelantus address, Update address and balance
         if is_valid_firo in valid:
@@ -995,7 +1001,7 @@ async def withdraw_coins(variables, address, amount, memo=""):
 
 async def create_qr_code(variables):
     try:
-        url = pyqrcode.create(variables.firo_address)
+        url = pyqrcode.create(variables.firo_address[0])
         url.png('qrcode.png', scale=6, module_color="#000000",
                 background="#d8e4ee")
         time.sleep(0.5)
@@ -1114,7 +1120,6 @@ async def withdraw_failed_image(user_id):
 
 
 async def action_processing(cmd, args, variables):
-    print(f'COMMAND IS {cmd}')
     """
         Check each user actions
     """
@@ -1183,8 +1188,9 @@ async def action_processing(cmd, args, variables):
             await incorrect_parameters_image(variables)
 
     elif cmd.startswith("!balance"):
+        balance = 0 if variables.balance_in_firo is None else variables.balance_in_firo
         await send_message(variables.message.author,
-                           dictionary['balance'] % "{0:.8f}".format(float(variables.balance_in_firo))
+                           dictionary['balance'] % "{0:.8f}".format(float(balance))
                            )
 
     elif cmd.startswith("!withdraw"):
@@ -1199,7 +1205,7 @@ async def action_processing(cmd, args, variables):
 
     elif cmd.startswith("!deposit"):
         await send_message(variables.message.author,
-                           dictionary['deposit'] % variables.firo_address
+                           dictionary['deposit'] % variables.firo_address[0]
                            )
         await create_qr_code(variables)
 
