@@ -16,14 +16,14 @@ import matplotlib.pyplot as plt
 import datetime
 import time
 import discord
-from discord.ext import tasks
+from discord.ext import tasks, commands
 import asyncio
 from pymongo import MongoClient
 import uuid
-import png
+# import png
 from api.firo_wallet_api import FiroWalletAPI
-import discord
-from discord.ext import commands
+
+# from discord.ext import commands
 
 plt.style.use('seaborn-whitegrid')
 
@@ -69,12 +69,12 @@ col_txs = db['txs']
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="/", intents=intents)
 
 
 @bot.tree.command(name="start", description="Firo bot start command, use this to get an address and get tipping")
-async def slash_command(interaction=discord.Interaction):
-    await interaction.response.send_message("!start")
+async def start(ctx):
+    await ctx.send("!start")
 
 
 @bot.tree.command(name="help", description="Gives a list of commands that you can send to the Firo Tip bot")
@@ -88,7 +88,8 @@ async def slash_command(interaction=discord.Interaction):
 
 
 @bot.tree.command(name="balance", description="Returns the wallet's balance")
-async def slash_command(interaction=discord.Interaction):
+async def balance(interaction=discord.Interaction):
+    print('BALANCE CALLED')
     await interaction.response.send_message("!balance")
 
 
@@ -259,8 +260,6 @@ async def update_balance():
             unused_mints.append(mnt)
     response = wallet_api.get_txs_list()
 
-    # print(wallet_api.listsparkspends())
-    # print(f"SPENDS IS {wallet_api.listsparkspends()}")
     for _tx in response['result']:
         for unused_mnt in unused_mints:
             try:
@@ -373,9 +372,10 @@ async def update_balance():
                                 }
                             )
 
-                        await create_send_tips_image(_user_sender['_id'],
-                                                     "{0:.8f}".format(float(abs(_tx['amount']))),
-                                                     "%s..." % _user_sender['Address'][0][:8])
+                        if _tx['amount'] > 0:
+                            await create_send_tips_image(_user_sender['_id'],
+                                                         "{0:.8f}".format(float(abs(_tx['amount']))),
+                                                         "%s..." % _user_sender['Address'][0][:8])
 
                         col_senders.update_one(
                             {"txId": _tx['txid'], "status": "pending", "user_id": _user_sender['_id']},
@@ -389,6 +389,7 @@ async def update_balance():
             except Exception as exc:
                 await send_to_logs(exc)
                 traceback.print_exc()
+
 
 asyncio.run(update_balance())
 
@@ -678,8 +679,14 @@ async def tip_user(variables, username, amount, comment, _type=None):
             return
 
         username = username.replace('@', '')
+        # Discord User ID
+        if username.startswith('<'):
+            _use_id = username.replace('<', '').replace('>', '')
+            discord_user = await bot.fetch_user(_use_id)
+            username = discord_user.name
 
         _user = col_users.find_one({"username": username})
+
         _is_username_exists = _user is not None
 
         if not _is_username_exists:
