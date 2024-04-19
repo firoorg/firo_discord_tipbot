@@ -20,10 +20,7 @@ from discord.ext import tasks, commands
 import asyncio
 from pymongo import MongoClient
 import uuid
-# import png
 from api.firo_wallet_api import FiroWalletAPI
-
-# from discord.ext import commands
 
 plt.style.use('seaborn-whitegrid')
 
@@ -70,57 +67,6 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="/", intents=intents)
-
-
-@bot.tree.command(name="start", description="Firo bot start command, use this to get an address and get tipping")
-async def start(ctx):
-    await ctx.send("!start")
-
-
-@bot.tree.command(name="help", description="Gives a list of commands that you can send to the Firo Tip bot")
-async def slash_command(interaction=discord.Interaction):
-    await interaction.response.send_message("!help")
-
-
-@bot.tree.command(name="botbalance", description="Returns the current balance in Bot")
-async def slash_command(interaction=discord.Interaction):
-    await interaction.response.send_message("!botbalance")
-
-
-@bot.tree.command(name="balance", description="Returns the wallet's balance")
-async def balance(interaction=discord.Interaction):
-    print('BALANCE CALLED')
-    await interaction.response.send_message("!balance")
-
-
-@bot.tree.command(name="deposit", description="Returns your Firo deposit address, Send some Firo here to get tipping")
-async def slash_command(interaction=discord.Interaction):
-    await interaction.response.send_message("!deposit")
-
-
-@bot.tree.command(name="withdraw", description="Allows sending onchain funds to a given address, requires address and "
-                                               "amount")
-async def slash_command(interaction=discord.Interaction):
-    await interaction.response.send_message("!withdraw")
-
-
-@bot.tree.command(name="envelope", description="Sends a red envelope to the group, where everyone can open and share "
-                                               "the Firo")
-async def slash_command(interaction=discord.Interaction):
-    await interaction.response.send_message("!envelope")
-
-
-@bot.tree.command(name="tip", description="Send a user a tip")
-async def slash_command(interaction=discord.Interaction):
-    await interaction.response.send_message("!tip")
-
-
-@bot.tree.command(name="atip", description="Send a user an anonymous tip")
-async def slash_command(interaction=discord.Interaction):
-    await interaction.response.send_message("!atip")
-
-
-# bot = discord.Client(intents=intents)
 
 last_channel = 0
 last_user = ""
